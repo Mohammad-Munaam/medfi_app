@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "680176477106",
+    "project_id": "medfi-aada9",
+    "storage_bucket": "medfi-aada9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680176477106:android:871e3b4bb9658d736dfaab",
+        "android_client_info": {
+          "package_name": "com.example.medfi_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdeROgteunu0Da4YvH56icDDurySnNndw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680176477106:android:b2cdf2a9fdf505706dfaab",
+        "android_client_info": {
+          "package_name": "com.medfi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdeROgteunu0Da4YvH56icDDurySnNndw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
