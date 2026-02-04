@@ -1,9 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
+import '../services/google_auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  final _auth = FirebaseAuth.instance;
+
+  Future<void> _loginWithEmail() async {
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      _showMessage('Email and password are required');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showMessage(e.message ?? 'Login failed');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,74 +62,110 @@ class LoginScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
+
               Center(
                 child: Image.asset(
                   'assets/images/medfi_logo.png',
-                  height: 90,
+                  height: 200,
+                  fit: BoxFit.contain,
                 ),
               ),
+
               const SizedBox(height: 32),
+
               const Text(
                 'Welcome Back',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
+
               const SizedBox(height: 20),
-              _inputField('Email'),
-              const SizedBox(height: 16),
-              _inputField('Password', isPassword: true),
-              const SizedBox(height: 24),
-              _primaryButton(
-                text: 'Login',
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  );
-                },
+
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  hintText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
               ),
+
               const SizedBox(height: 16),
+
+              TextField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                decoration: InputDecoration(
+                  hintText: 'Password',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _loginWithEmail,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Login'),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.login),
+                  label: const Text('Continue with Google'),
+                  onPressed: () async {
+                    final user =
+                    await GoogleAuthService.signInWithGoogle();
+                    if (user != null && mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const HomeScreen()),
+                      );
+                    }
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
               Center(
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const RegisterScreen()),
                     );
                   },
                   child: const Text('Create new account'),
                 ),
               ),
+
               const Spacer(),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _inputField(String hint, {bool isPassword = false}) {
-    return TextField(
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  Widget _primaryButton({required String text, required VoidCallback onTap}) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF0A8F5A),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(text, style: const TextStyle(fontSize: 16)),
       ),
     );
   }

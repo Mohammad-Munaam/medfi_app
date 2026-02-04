@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
@@ -9,15 +11,28 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Timer? _navigationTimer;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    });
+    _navigationTimer = Timer(const Duration(seconds: 2), _navigateToLogin);
+  }
+
+  @override
+  void dispose() {
+    _navigationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _navigateToLogin() {
+    if (!mounted) {
+      return;
+    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
@@ -50,4 +65,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

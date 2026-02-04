@@ -13,6 +13,7 @@ dependencies:
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   geolocator: ^10.1.0
+  google_sign_in: ^6.2.1
 
 flutter:
   uses-material-design: true
