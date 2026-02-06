@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'request_ambulance_screen.dart';
+import 'login_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -25,22 +27,59 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // 🔹 TOP BAR (TITLE + ACTIONS)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        'MEDFI',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'MEDFI',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Emergency medical help, fast & reliable',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Emergency medical help, fast & reliable',
-                        style: TextStyle(fontSize: 14),
+
+                      // 🔹 PROFILE BUTTON
+                      IconButton(
+                        icon: const Icon(Icons.person_outline),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // 🔹 LOGOUT BUTTON
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                                (route) => false,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -64,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 16),
-                        _InfoCard(),
+                        const _InfoCard(),
                       ],
                     ),
                   ),
@@ -143,6 +182,8 @@ class _RequestCard extends StatelessWidget {
 
 // ================= INFO CARD =================
 class _InfoCard extends StatelessWidget {
+  const _InfoCard();
+
   @override
   Widget build(BuildContext context) {
     return Container(

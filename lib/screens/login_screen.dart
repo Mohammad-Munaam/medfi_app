@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: const Text('Continue with Google'),
                   onPressed: () async {
                     final user =
-                    await GoogleAuthService.signInWithGoogle();
+                    await GoogleAuthService().signIn();
                     if (user != null && mounted) {
                       Navigator.pushReplacement(
                         context,
