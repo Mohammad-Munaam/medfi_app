@@ -1,11 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'request_ambulance_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
-import 'package:flutter/services.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    _initFCM(); // 🔔 PART 5 — FCM TOKEN INIT
+  }
+
+  Future<void> _initFCM() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Android 13+ permission
+    await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // Get token
+    String? token = await messaging.getToken();
+
+    debugPrint('🔥 FCM TOKEN: $token');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +43,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFFDFBF7),
       body: Stack(
         children: [
-          // 🔹 Background ambulance watermark (no overlap)
+          // 🔹 Background ambulance watermark
           Positioned.fill(
             child: Opacity(
               opacity: 0.08,
@@ -28,7 +58,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🔹 TOP BAR (TITLE + ACTIONS)
+                // 🔹 TOP BAR
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -56,7 +86,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // 🔹 PROFILE BUTTON
+                      // 🔹 PROFILE
                       IconButton(
                         icon: const Icon(Icons.person_outline),
                         onPressed: () {
@@ -69,7 +99,7 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
 
-                      // 🔹 LOGOUT BUTTON
+                      // 🔹 LOGOUT
                       IconButton(
                         icon: const Icon(Icons.logout),
                         onPressed: () {
@@ -101,7 +131,8 @@ class HomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const RequestAmbulanceScreen(),
+                                  builder: (_) =>
+                                  const RequestAmbulanceScreen(),
                                 ),
                               );
                             },
