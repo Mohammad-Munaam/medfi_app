@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'request_ambulance_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
+import 'package:flutter/services.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -91,16 +92,20 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _RequestCard(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                const RequestAmbulanceScreen(),
-                              ),
-                            );
-                          },
+                        AnimatedScale(
+                          scale: 1,
+                          duration: const Duration(milliseconds: 120),
+                          child: _RequestCard(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RequestAmbulanceScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const _InfoCard(),

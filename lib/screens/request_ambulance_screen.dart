@@ -1,187 +1,145 @@
 import 'package:flutter/material.dart';
-import 'request_success_screen.dart';
+import 'package:flutter/services.dart';
+import 'tracking_screen.dart';
 
-class RequestAmbulanceScreen extends StatelessWidget {
+class RequestAmbulanceScreen extends StatefulWidget {
   const RequestAmbulanceScreen({super.key});
+
+  @override
+  State<RequestAmbulanceScreen> createState() =>
+      _RequestAmbulanceScreenState();
+}
+
+class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
+  final TextEditingController _detailsController = TextEditingController();
+
+  bool _isLoading = false;
+
+  void _submitRequest() async {
+    if (_detailsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter emergency details"),
+        ),
+      );
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // ⏳ Simulate request processing
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    // ✅ Smooth transition to tracking screen
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (_, __, ___) => const TrackingScreen(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAF8),
       appBar: AppBar(
-        title: const Text('Request Ambulance'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: const Text("Request Ambulance"),
       ),
-      body: SafeArea(
-        child: Stack(
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---- BACKGROUND IMAGE (NON-OVERLAPPING) ----
-            Positioned(
-              bottom: -40,
-              left: 0,
-              right: 0,
-              child: Opacity(
-                opacity: 0.08,
-                child: Image.asset(
-                  'assets/images/ambulance_bg.png',
-                  height: 300,
-                  fit: BoxFit.contain,
+            const Text(
+              "Emergency Details",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: _detailsController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: "Describe the emergency...",
+                filled: true,
+                fillColor: const Color(0xFFF4F1FA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
 
-            // ---- FOREGROUND CONTENT ----
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _infoCard(),
-                  const SizedBox(height: 16),
-                  _detailsCard(),
-                  const SizedBox(height: 24),
-                  _confirmButton(context),
-                ],
+            const SizedBox(height: 30),
+
+            // 🔹 GRADIENT CTA BUTTON + LOADING STATE
+            GestureDetector(
+              onTap: _isLoading ? null : _submitRequest,
+              child: Container(
+                height: 52,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: _isLoading
+                      ? null
+                      : const LinearGradient(
+                    colors: [
+                      Colors.redAccent,
+                      Colors.deepOrange,
+                    ],
+                  ),
+                  color: _isLoading ? Colors.grey.shade300 : null,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.redAccent,
+                    ),
+                  )
+                      : const Text(
+                    "Confirm Ambulance Request",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  // ---------------- INFO CARD ----------------
-  Widget _infoCard() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: const [
-            Icon(Icons.local_hospital, color: Colors.red, size: 36),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Emergency Ambulance',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Fastest available ambulance will be dispatched.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- DETAILS CARD ----------------
-  Widget _detailsCard() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Request Details',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            SizedBox(height: 12),
-            _DetailRow(
-              icon: Icons.location_on,
-              label: 'Location',
-              value: 'Using live GPS location',
-            ),
-            SizedBox(height: 8),
-            _DetailRow(
-              icon: Icons.access_time,
-              label: 'Response Time',
-              value: '5 – 10 minutes',
-            ),
-            SizedBox(height: 8),
-            _DetailRow(
-              icon: Icons.shield,
-              label: 'Privacy',
-              value: 'Location shared only during emergency',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- CONFIRM BUTTON ----------------
-  Widget _confirmButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const RequestSuccessScreen(),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: const Text(
-          'Confirm Ambulance Request',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------- REUSABLE ROW ----------------
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.green),
-        const SizedBox(width: 10),
-        Text(
-          '$label:',
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ),
-      ],
     );
   }
 }
