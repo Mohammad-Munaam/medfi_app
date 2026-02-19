@@ -42,7 +42,8 @@ class RequestSuccessScreen extends StatelessWidget {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const TrackingScreen(),
+                          builder: (_) =>
+                              const TrackingScreen(requestId: 'demo'),
                         ),
                       );
                     },

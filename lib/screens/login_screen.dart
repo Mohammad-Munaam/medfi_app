@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
+import 'admin/admin_dashboard_screen.dart';
 import '../services/google_auth_service.dart';
+import '../services/admin_service.dart';
+import '../services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,10 +22,32 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   final _auth = FirebaseAuth.instance;
+  final _adminService = AdminService();
+  final _firestoreService = FirestoreService();
+
+  Future<void> _navigateByRole(User user) async {
+    // Ensure user doc has a role field
+    await _firestoreService.saveUserRole(user.uid, user.email ?? '');
+
+    final role = await _adminService.getUserRole(user.uid);
+
+    if (!mounted) return;
+
+    if (role == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
+  }
 
   Future<void> _loginWithEmail() async {
-    if (_emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       _showMessage('Email and password are required');
       return;
     }
@@ -30,26 +55,26 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      final cred = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      if (cred.user != null) {
+        await _navigateByRole(cred.user!);
+      }
     } on FirebaseAuthException catch (e) {
       _showMessage(e.message ?? 'Login failed');
+    } catch (e) {
+      _showMessage('Login failed: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _showMessage(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -62,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-
               Center(
                 child: Image.asset(
                   'assets/images/medfi_logo.png',
@@ -70,16 +94,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   fit: BoxFit.contain,
                 ),
               ),
-
               const SizedBox(height: 32),
-
               const Text(
                 'Welcome Back',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-
               const SizedBox(height: 20),
-
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -88,9 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: _passwordController,
                 obscureText: !_isPasswordVisible,
@@ -111,9 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -124,44 +140,56 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Text('Login'),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.login),
                   label: const Text('Continue with Google'),
-                  onPressed: () async {
-                    final user =
-                    await GoogleAuthService().signIn();
-                    if (user != null && mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const HomeScreen()),
-                      );
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            final googleAccount =
+                                await GoogleAuthService().signIn();
+                            if (googleAccount != null) {
+                              // Get Firebase credential from Google account
+                              final googleAuth =
+                                  await googleAccount.authentication;
+                              final credential = GoogleAuthProvider.credential(
+                                accessToken: googleAuth.accessToken,
+                                idToken: googleAuth.idToken,
+                              );
+                              final userCred =
+                                  await _auth.signInWithCredential(credential);
+                              if (userCred.user != null) {
+                                await _navigateByRole(userCred.user!);
+                              }
+                            }
+                          } catch (e) {
+                            _showMessage('Google sign in failed: $e');
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isLoading = false);
+                            }
+                          }
+                        },
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Center(
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (_) => const RegisterScreen()),
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
                   },
                   child: const Text('Create new account'),
                 ),
               ),
-
               const Spacer(),
             ],
           ),

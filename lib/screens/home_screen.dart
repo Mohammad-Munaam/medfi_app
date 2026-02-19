@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:medfi_app/services/fcm_service.dart';
+import 'package:medfi_app/services/firestore_service.dart';
 
 import 'request_ambulance_screen.dart';
 import 'login_screen.dart';
@@ -14,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -22,19 +23,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initFCM() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    // Android 13+ permission
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    final fcmService = FCMService();
+    String? token = await fcmService.getToken();
 
-    // Get token
-    String? token = await messaging.getToken();
-
-    debugPrint('🔥 FCM TOKEN: $token');
+    if (token != null) {
+      final firestoreService = FirestoreService();
+      await firestoreService.saveUserToken(user.uid, token);
+    }
   }
 
   @override
@@ -108,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(
                               builder: (_) => const LoginScreen(),
                             ),
-                                (route) => false,
+                            (route) => false,
                           );
                         },
                       ),
@@ -132,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                  const RequestAmbulanceScreen(),
+                                      const RequestAmbulanceScreen(),
                                 ),
                               );
                             },

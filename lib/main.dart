@@ -1,31 +1,75 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-
-Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint('Background message: ${message.notification?.title}');
-}
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'firebase_options.dart';
+import 'services/notification_service.dart';
+import 'services/fcm_service.dart';
+import 'app.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+    // Initialize Firebase
+    try {
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(const Duration(seconds: 15));
+      } else {
+        await Firebase.initializeApp().timeout(const Duration(seconds: 15));
+      }
+    } catch (e) {
+      debugPrint('🛑 Firebase init failed: $e');
+    }
 
-  runApp(const MyApp());
+    // Initialize Crashlytics (release mode only)
+    if (!kIsWeb) {
+      try {
+        await FirebaseCrashlytics.instance
+            .setCrashlyticsCollectionEnabled(!kDebugMode);
+
+        // Route Flutter framework errors to Crashlytics
+        FlutterError.onError = (details) {
+          FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+          if (kDebugMode) {
+            FlutterError.presentError(details);
+          }
+        };
+      } catch (e) {
+        debugPrint('⚠️ Crashlytics init failed: $e');
+      }
+    } else {
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        debugPrint('🛑 Flutter Error: ${details.exceptionAsString()}');
+      };
+    }
+
+    // Initialize local notifications
+    try {
+      await NotificationService.init();
+    } catch (e) {
+      debugPrint('⚠️ Notification init failed: $e');
+    }
+
+    // Initialize FCM
+    try {
+      final fcmService = FCMService();
+      await fcmService.init();
+    } catch (e) {
+      debugPrint('⚠️ FCM init failed: $e');
+    }
+
+    runApp(const MedfiApp());
+  }, (error, stackTrace) {
+    // Route async errors to Crashlytics in release, debugPrint in debug
+    if (!kIsWeb && !kDebugMode) {
+      FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: true);
+    } else {
+      debugPrint('🛑 Unhandled error: $error');
+    }
+  });
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(child: Text('MEDFI')),
-      ),
-    );
-  }
-}
-

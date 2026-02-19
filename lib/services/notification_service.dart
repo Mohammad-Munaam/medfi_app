@@ -3,39 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  static final _firebaseMessaging = FirebaseMessaging.instance;
   static final _localNotifications = FlutterLocalNotificationsPlugin();
 
+  /// Initialize local notification plugin (call once from main.dart)
   static Future<void> init() async {
-    // 🔔 Request permission
-    await _firebaseMessaging.requestPermission();
-
-    // 🔑 Get FCM token
-    final token = await _firebaseMessaging.getToken();
-    debugPrint("FCM Token: $token");
-
-    // 🔔 Local notification setup
     const androidSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const settings = InitializationSettings(android: androidSettings);
 
     await _localNotifications.initialize(settings);
-
-    // 🔔 Foreground notifications
-    FirebaseMessaging.onMessage.listen(_showNotification);
+    debugPrint("✅ NotificationService initialized");
   }
 
-  static void _showNotification(RemoteMessage message) {
+  /// Show a local notification from a RemoteMessage (FCM)
+  static void showNotification(RemoteMessage message) {
     const androidDetails = AndroidNotificationDetails(
-      'high_importance_channel',
-      'High Importance Notifications',
+      'medfi_alerts',
+      'MEDFI Alerts',
+      channelDescription: 'Emergency and status update notifications',
       importance: Importance.max,
       priority: Priority.high,
     );
 
-    const notificationDetails =
-    NotificationDetails(android: androidDetails);
+    const notificationDetails = NotificationDetails(android: androidDetails);
 
     _localNotifications.show(
       message.hashCode,

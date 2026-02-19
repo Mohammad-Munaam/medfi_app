@@ -1,6 +1,7 @@
 name: medfi_app
 description: MEDFI Emergency Ambulance App
 publish_to: 'none'
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -12,11 +13,16 @@ dependencies:
   firebase_core: ^2.24.2
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
+  firebase_crashlytics: ^3.4.8
+  firebase_analytics: ^10.8.5
   geolocator: ^10.1.0
+  location: ^5.0.3
   google_maps_flutter: ^2.5.0
+  google_maps_flutter_web: ^0.5.14+3
   google_sign_in: ^6.2.1
   firebase_messaging: ^14.7.10
   flutter_local_notifications: ^17.0.0
+  url_launcher: ^6.3.2
 
 flutter:
   uses-material-design: true

@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'super_admin';
+    }
+    
+    function isDispatcher() {
+      return isAuthenticated() && (getUserData().role == 'dispatcher' || getUserData().role == 'super_admin');
+    }
+    
+    function isOperator() {
+      return isAuthenticated() && (getUserData().role == 'operator' || getUserData().role == 'super_admin');
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+    }
+
+    // Ambulance Requests Collection
+    match /ambulance_requests/{requestId} {
+      allow read: if isAuthenticated();
+      
+      // Users can create requests
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Update rules
+      allow update: if isAuthenticated() && (
+        // Super Admin can do anything
+        isSuperAdmin() ||
+        
+        // Dispatcher can assign operators
+        (isDispatcher() && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignedOperatorId', 'assignedAt', 'updatedAt', 'status'])
+        ) ||
+        
+        // Operator can update status of assigned requests
+        (isOperator() && 
+          resource.data.assignedOperatorId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'location', 'driverLocation'])
+        ) ||
+        
+        // Users can cancel/update their own requests (if acceptable policy, otherwise restrict)
+        (resource.data.userId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['details', 'location', 'updatedAt'])
+        )
+      );
+    }
+    
+    // Metrics
+    match /operator_metrics/{operatorId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin(); // Only admin or cloud functions (backend SDK bypasses rules)
+    }
+    
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow write: if false; // Only written by Cloud Functions
+    }
+  }
+}
