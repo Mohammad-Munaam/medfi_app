@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../core/services/location_service.dart';
 
 class TrackingService {
@@ -92,5 +95,63 @@ class TrackingService {
   /// Stream driver location for the User App
   Stream<DocumentSnapshot> streamDriverLocation(String requestId) {
     return _db.collection('ambulance_requests').doc(requestId).snapshots();
+  }
+
+  /// Fetch road-aware route points between two locations
+  /// For MVP/Sim: If no API key is restricted, we'll try fetching or return mock road points
+  Future<List<LatLng>> getRoutePoints(LatLng start, LatLng end) async {
+    const String apiKey =
+        'AIzaSyCdeROgteunu0Da4YvH56icDDurySnNndw'; // Using existing key
+    final String url =
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&key=$apiKey';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          final String polyline =
+              data['routes'][0]['overview_polyline']['points'];
+          return _decodePolyline(polyline);
+        }
+      }
+      debugPrint("⚠️ Directions API failed, status: ${response.statusCode}");
+    } catch (e) {
+      debugPrint("❌ Error fetching route: $e");
+    }
+
+    // Fallback: Return straight line if API fails
+    return [start, end];
+  }
+
+  /// Decodes encoded polyline string into List<LatLng>
+  List<LatLng> _decodePolyline(String encoded) {
+    List<LatLng> points = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+    return points;
   }
 }
