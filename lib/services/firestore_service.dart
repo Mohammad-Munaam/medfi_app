@@ -31,25 +31,47 @@ class FirestoreService {
     }
   }
 
-  // Create Ambulance Request
+  // Get Available Drivers
+  Stream<List<DocumentSnapshot>> getNearbyDrivers() {
+    return _db
+        .collection('drivers')
+        .where('isAvailable', isEqualTo: true)
+        .limit(10) // Limit for MVP
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+  }
+
+  // Create Ambulance Request with Driver Selection
   Future<String?> createAmbulanceRequest({
     required String userId,
     required String details,
     required double lat,
     required double lng,
+    String? selectedDriverId,
+    String? vehicleType,
   }) async {
     try {
       DocumentReference ref = await _db.collection('ambulance_requests').add({
         'userId': userId,
         'details': details,
         'location': GeoPoint(lat, lng),
-        'status': 'requested',
-        'driverName': '',
+        'status': selectedDriverId != null ? 'accepted' : 'requested',
+        'selectedDriverId': selectedDriverId,
+        'vehicleType': vehicleType,
+        'driverName': '', // Can be populated via Cloud Functions or UI
         'ambulanceNumber': '',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }).timeout(const Duration(seconds: 10));
+      });
       debugPrint("✅ Ambulance Request Created: ${ref.id}");
+
+      // If driver is selected, update driver availability
+      if (selectedDriverId != null) {
+        await _db.collection('drivers').doc(selectedDriverId).update({
+          'isAvailable': false,
+        });
+      }
+
       return ref.id;
     } catch (e) {
       debugPrint("❌ Error creating request: $e");

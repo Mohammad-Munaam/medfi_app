@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:medfi_app/services/firestore_service.dart';
-import 'package:medfi_app/services/analytics_service.dart';
-import 'tracking_screen.dart';
+import 'driver_selection_screen.dart';
 
 class RequestAmbulanceScreen extends StatefulWidget {
   const RequestAmbulanceScreen({super.key});
@@ -54,48 +51,25 @@ class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
       double lat = 37.4219983;
       double lng = -122.084;
 
-      // 2. Create Request in Firestore
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Not logged in. Please login first.")),
-        );
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final firestoreService = FirestoreService();
-      String? requestId = await firestoreService.createAmbulanceRequest(
-        userId: user.uid,
-        details: _detailsController.text.trim(),
-        lat: lat,
-        lng: lng,
-      );
-
-      // Log analytics event
-      if (requestId != null) {
-        AnalyticsService.logRequestCreated(requestId: requestId);
-      }
-
+      // 2. Navigate to Driver Selection
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
 
-      if (requestId != null) {
-        // ✅ Navigate to Request Status Screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TrackingScreen(requestId: requestId),
+      // Navigate to Driver Selection Screen
+      // Passing details and location to next screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DriverSelectionScreen(
+            details: _detailsController.text.trim(),
+            lat: lat,
+            lng: lng,
           ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Failed to create request. Try again.")));
-      }
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {

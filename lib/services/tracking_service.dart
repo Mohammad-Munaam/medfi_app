@@ -1,16 +1,17 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
+import '../core/services/location_service.dart';
 
 class TrackingService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final Location _location = Location();
-  StreamSubscription<LocationData>? _locationSubscription;
+  final LocationService _locationService = LocationService();
+  StreamSubscription<Position>? _locationSubscription;
 
   // Throttling variables
   DateTime? _lastUpdateTime;
-  LocationData? _lastLocation;
+  Position? _lastLocation;
 
   // Configuration
   static const int _throttleSeconds = 5;
@@ -19,28 +20,15 @@ class TrackingService {
   /// Start sharing driver location for a specific request
   Future<void> startDriverTracking(String requestId) async {
     // 1. Check/Request Permissions
-    bool serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) return;
+    bool hasPermission = await _locationService.checkPermission();
+    if (!hasPermission) {
+      debugPrint("❌ Location permission denied");
+      return;
     }
 
-    PermissionStatus permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) return;
-    }
-
-    // 2. Configure Location Settings for Driver (High Accuracy)
-    await _location.changeSettings(
-      accuracy: LocationAccuracy.navigation,
-      interval: 5000, // 5 seconds
-      distanceFilter: 10, // 10 meters
-    );
-
-    // 3. Listen to Location Updates
+    // 2. Listen to Location Updates
     _locationSubscription =
-        _location.onLocationChanged.listen((LocationData currentLocation) {
+        _locationService.getPositionStream().listen((Position currentLocation) {
       _updateLocation(requestId, currentLocation);
     });
 
@@ -51,11 +39,12 @@ class TrackingService {
   void stopTracking() {
     _locationSubscription?.cancel();
     _locationSubscription = null;
+    _locationService.dispose();
     debugPrint("🛑 Driver tracking stopped");
   }
 
   /// Update Firestore with throttling logic
-  Future<void> _updateLocation(String requestId, LocationData location) async {
+  Future<void> _updateLocation(String requestId, Position location) async {
     final now = DateTime.now();
 
     // Check throttle time
@@ -65,13 +54,12 @@ class TrackingService {
       // Calculate distance if we have a previous location
       double distance = 0.0;
       if (_lastLocation != null) {
-        // Simple distance approximation (sufficient for rough check)
-        // In a real app, use Geolocator.distanceBetween()
-        double latDiff = (location.latitude! - _lastLocation!.latitude!).abs();
-        double lngDiff =
-            (location.longitude! - _lastLocation!.longitude!).abs();
-        // Roughly: 1 degree ~ 111km, so 0.0001 ~ 11m
-        distance = (latDiff + lngDiff) * 100000;
+        distance = Geolocator.distanceBetween(
+          _lastLocation!.latitude,
+          _lastLocation!.longitude,
+          location.latitude,
+          location.longitude,
+        );
       }
 
       // If less than throttle time AND moved less than minimum distance, skip update

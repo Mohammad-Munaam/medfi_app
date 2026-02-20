@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import '../core/services/location_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -12,7 +12,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   LatLng? _currentLocation;
 
-  final Location _location = Location();
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -21,29 +21,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _getLocation() async {
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
+    final hasPermission = await _locationService.checkPermission();
+    if (!hasPermission) return;
 
-    serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
+    final loc = await _locationService.getCurrentPosition();
+    if (loc != null) {
+      setState(() {
+        _currentLocation = LatLng(loc.latitude, loc.longitude);
+      });
     }
-
-    permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    final loc = await _location.getLocation();
-    setState(() {
-      _currentLocation = LatLng(loc.latitude!, loc.longitude!);
-    });
   }
 
   @override

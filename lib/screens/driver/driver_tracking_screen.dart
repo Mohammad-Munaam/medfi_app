@@ -1,8 +1,9 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+
 import '../../services/tracking_service.dart';
+import '../../core/services/location_service.dart';
 
 class DriverTrackingScreen extends StatefulWidget {
   final String requestId;
@@ -15,7 +16,7 @@ class DriverTrackingScreen extends StatefulWidget {
 
 class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   final TrackingService _trackingService = TrackingService();
-  final Location _location = Location();
+  final LocationService _locationService = LocationService();
 
   GoogleMapController? _mapController;
   bool _isTracking = false;
@@ -30,14 +31,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      final locData = await _location.getLocation();
-      setState(() {
-        _currentPosition = LatLng(locData.latitude!, locData.longitude!);
-        _updateMarker(_currentPosition);
-      });
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLng(_currentPosition),
-      );
+      final pos = await _locationService.getCurrentPosition();
+      if (pos != null) {
+        setState(() {
+          _currentPosition = LatLng(pos.latitude, pos.longitude);
+          _updateMarker(_currentPosition);
+        });
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLng(_currentPosition),
+        );
+      }
     } catch (e) {
       debugPrint("Error getting location: $e");
     }
@@ -59,16 +62,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   void _toggleTracking() {
     if (_isTracking) {
       _trackingService.stopTracking();
-      _location.onLocationChanged
-          .listen(null)
-          .cancel(); // Stop local listener too if any
     } else {
       _trackingService.startDriverTracking(widget.requestId);
 
-      // Also listen locally to update map UI
-      _location.onLocationChanged.listen((loc) {
+      // Listen locally to update map UI
+      _locationService.getPositionStream().listen((pos) {
         if (!mounted) return;
-        final newPos = LatLng(loc.latitude!, loc.longitude!);
+        final newPos = LatLng(pos.latitude, pos.longitude);
         setState(() {
           _currentPosition = newPos;
           _updateMarker(newPos);

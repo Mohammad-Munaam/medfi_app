@@ -53,11 +53,24 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'location', 'driverLocation'])
         ) ||
         
-        // Users can cancel/update their own requests (if acceptable policy, otherwise restrict)
+        // Users can cancel/update their own requests (including driver selection)
         (resource.data.userId == request.auth.uid && 
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['details', 'location', 'updatedAt'])
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['details', 'location', 'updatedAt', 'selectedDriverId', 'vehicleType', 'status'])
         )
       );
+    }
+
+    // Drivers Collection
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      // Only admin or drivers themselves can update specific fields (simplified for now)
+      allow update: if isAuthenticated() && (
+        // Driver updating their own status/location
+        (request.auth.uid == driverId) || 
+        // User updating isAvailable during booking (should ideally be done via backend, but allowing for MVP)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isAvailable']))
+      );
+      allow create: if isSuperAdmin(); // Only admin creates drivers
     }
     
     // Metrics
