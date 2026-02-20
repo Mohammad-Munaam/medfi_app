@@ -1,49 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
+    // Backward-compatible role checks: support both legacy and current role names.
     function isSuperAdmin() {
-      return isAuthenticated() && getUserData().role == 'super_admin';
+      return isAuthenticated() && (
+        getUserData().role == 'super_admin' ||
+        getUserData().role == 'admin'
+      );
     }
-    
+
     function isDispatcher() {
-      return isAuthenticated() && (getUserData().role == 'dispatcher' || getUserData().role == 'super_admin');
+      return isAuthenticated() && (
+        getUserData().role == 'dispatcher' ||
+        getUserData().role == 'admin' ||
+        getUserData().role == 'super_admin'
+      );
     }
-    
+
     function isOperator() {
-      return isAuthenticated() && (getUserData().role == 'operator' || getUserData().role == 'super_admin');
+      return isAuthenticated() && (
+        getUserData().role == 'operator' ||
+        getUserData().role == 'super_admin'
+      );
     }
 
     // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isSuperAdmin() ||
+        // Dispatcher/admin can maintain operator assignment metadata.
+        (isDispatcher() && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['assignedRequests', 'lastUpdated', 'active', 'shiftStart', 'shiftEnd']))
+      );
     }
 
     // Ambulance Requests Collection
     match /ambulance_requests/{requestId} {
       allow read: if isAuthenticated();
-      
+
       // Users can create requests
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      
+
       // Update rules
       allow update: if isAuthenticated() && (
         // Super Admin can do anything
         isSuperAdmin() ||
-        
-        // Dispatcher can assign operators
-        (isDispatcher() && 
+
+        // Dispatcher can assign operators and fill assignment details
+        (isDispatcher() &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'assignedOperatorId',
             'assignedAt',
@@ -53,16 +70,25 @@ service cloud.firestore {
             'ambulanceNumber'
           ])
         ) ||
-        
+
         // Operator can update status of assigned requests
-        (isOperator() && 
+        (isOperator() &&
           resource.data.assignedOperatorId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'location', 'driverLocation'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status',
+            'updatedAt',
+            'location',
+            'driverLocation'
+          ])
         ) ||
-        
-        // Users can cancel/update their own requests (if acceptable policy, otherwise restrict)
-        (resource.data.userId == request.auth.uid && 
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['details', 'location', 'updatedAt'])
+
+        // Request owner can edit their own request details
+        (resource.data.userId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'details',
+            'location',
+            'updatedAt'
+          ])
         )
       );
     }
@@ -91,13 +117,13 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid
       );
     }
-    
+
     // Metrics
     match /operator_metrics/{operatorId} {
       allow read: if isAuthenticated();
       allow write: if isSuperAdmin(); // Only admin or cloud functions (backend SDK bypasses rules)
     }
-    
+
     // Audit Logs
     match /audit_logs/{logId} {
       allow read: if isSuperAdmin();
