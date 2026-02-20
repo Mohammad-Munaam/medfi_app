@@ -96,7 +96,7 @@ service cloud.firestore {
     // Ambulances collection (catalog + availability)
     match /ambulances/{ambulanceId} {
       // Required by ambulance selection screens.
-      allow read: if isAuthenticated();
+      allow read: if true;
 
       // Dispatcher/super admin can create or modify ambulance inventory.
       allow create, update, delete: if isDispatcher();
