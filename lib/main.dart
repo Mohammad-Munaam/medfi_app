@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/fcm_service.dart';
 import 'app.dart';
+import 'utils/seed_drivers.dart';
 
 void main() async {
   runZonedGuarded(() async {
@@ -61,6 +62,13 @@ void main() async {
       await fcmService.init();
     } catch (e) {
       debugPrint('⚠️ FCM init failed: $e');
+    }
+
+    // Seed dummy drivers (run once)
+    try {
+      await seedDummyDrivers();
+    } catch (e) {
+      debugPrint('⚠️ Seeding drivers failed: $e');
     }
 
     runApp(const MedfiApp());

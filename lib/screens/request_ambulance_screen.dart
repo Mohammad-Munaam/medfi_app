@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'driver_selection_screen.dart';
+import 'location_picker_screen.dart';
 
 class RequestAmbulanceScreen extends StatefulWidget {
   const RequestAmbulanceScreen({super.key});
@@ -13,6 +15,8 @@ class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
   final TextEditingController _detailsController = TextEditingController();
 
   bool _isLoading = false;
+  LatLng? _pickedLocation;
+  String? _addressText;
 
   void _submitRequest() async {
     if (_detailsController.text.trim().isEmpty) {
@@ -31,25 +35,15 @@ class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
     });
 
     try {
-      // 1. Get Location
-      // Assuming 'location' package is available and permission granted from MapScreen or requested here.
-      // For Phase-5 safety, I'll use a hardcoded location if fetching fails or just try fetching.
-      // Since we integrated 'location' package in Phase-4, I should use it.
-      // However, to keep it robust and simple for this prompt (Status Flow focus),
-      // I will instantiate Location here.
-
-      // Note: MapScreen already asks for permission. If user comes here directly, might need it.
-      // But typically user goes Map -> Request or Home -> Request.
-      // Let's assume permission is okay or handle it gracefully.
-
-      /* 
-      final Location location = Location();
-      final LocationData pos = await location.getLocation();
-      */
-
-      // For demo stability if emulator usage is flaky with location:
-      double lat = 37.4219983;
-      double lng = -122.084;
+      // 1. Validate Location
+      if (_pickedLocation == null) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Please select a pickup location on map")),
+        );
+        return;
+      }
 
       // 2. Navigate to Driver Selection
       if (!mounted) return;
@@ -59,14 +53,14 @@ class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
       });
 
       // Navigate to Driver Selection Screen
-      // Passing details and location to next screen
+      // Passing details and selected location to next screen
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => DriverSelectionScreen(
             details: _detailsController.text.trim(),
-            lat: lat,
-            lng: lng,
+            lat: _pickedLocation!.latitude,
+            lng: _pickedLocation!.longitude,
           ),
         ),
       );
@@ -116,6 +110,80 @@ class _RequestAmbulanceScreenState extends State<RequestAmbulanceScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // 📍 LOCATION PICKER SECTION
+            const Text(
+              "Pickup Location",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: () async {
+                final LatLng? result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LocationPickerScreen(
+                      initialLocation: _pickedLocation,
+                    ),
+                  ),
+                );
+
+                if (result != null) {
+                  setState(() {
+                    _pickedLocation = result;
+                    _addressText =
+                        "${result.latitude.toStringAsFixed(4)}, ${result.longitude.toStringAsFixed(4)}";
+                  });
+                }
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F1FA),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _pickedLocation != null
+                        ? Colors.redAccent
+                        : Colors.transparent,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.map_outlined,
+                      color: _pickedLocation != null
+                          ? Colors.redAccent
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _pickedLocation == null
+                            ? "Select Pickup Point on Map"
+                            : "Selected: $_addressText",
+                        style: TextStyle(
+                          color: _pickedLocation == null
+                              ? Colors.grey[600]
+                              : Colors.black,
+                          fontWeight: _pickedLocation != null
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 14, color: Colors.grey),
+                  ],
                 ),
               ),
             ),
