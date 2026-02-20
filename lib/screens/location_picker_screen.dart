@@ -74,7 +74,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     target: _pickedLocation!,
                     zoom: 16,
                   ),
-                  onMapCreated: (controller) => _mapController = controller,
+                  onMapCreated: (controller) {},
                   onCameraMove: _onCameraMove,
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
