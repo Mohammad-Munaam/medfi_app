@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/driver_model.dart';
-import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
-import 'driver_assigned_screen.dart';
+import 'tracking_map_screen.dart';
 
 class DriverSelectionScreen extends StatefulWidget {
   final String details;
@@ -32,11 +30,68 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
 
   final List<String> _vehicleTypes = [
     'All',
-    'Basic Ambulance',
-    'ICU Ambulance',
-    'Advanced Life Support',
-    'Patient Transport',
-    'Rapid Response'
+    'Basic',
+    'ICU',
+    'Oxygen',
+    'Advanced',
+  ];
+
+  final List<DriverModel> _mockDrivers = [
+    DriverModel(
+      id: 'mock_1',
+      name: 'Rajesh Kumar',
+      phone: '+919876543210',
+      vehicleType: 'Basic',
+      vehicleNumber: 'KA 01 AM 1234',
+      rating: 4.8,
+      currentLat: 12.9716,
+      currentLng: 77.5946,
+      photoUrl: 'https://i.pravatar.cc/150?u=mock1',
+    ),
+    DriverModel(
+      id: 'mock_2',
+      name: 'Suresh Raina',
+      phone: '+919876543211',
+      vehicleType: 'ICU',
+      vehicleNumber: 'KA 01 AM 5678',
+      rating: 4.9,
+      currentLat: 12.9720,
+      currentLng: 77.5950,
+      photoUrl: 'https://i.pravatar.cc/150?u=mock2',
+    ),
+    DriverModel(
+      id: 'mock_3',
+      name: 'Amit Shah',
+      phone: '+919876543212',
+      vehicleType: 'Oxygen',
+      vehicleNumber: 'KA 01 AM 9012',
+      rating: 4.7,
+      currentLat: 12.9710,
+      currentLng: 77.5940,
+      photoUrl: 'https://i.pravatar.cc/150?u=mock3',
+    ),
+    DriverModel(
+      id: 'mock_4',
+      name: 'Priya Singh',
+      phone: '+919876543213',
+      vehicleType: 'Basic',
+      vehicleNumber: 'KA 01 AM 3456',
+      rating: 4.6,
+      currentLat: 12.9725,
+      currentLng: 77.5955,
+      photoUrl: 'https://i.pravatar.cc/150?u=mock4',
+    ),
+    DriverModel(
+      id: 'mock_5',
+      name: 'Vikram Batra',
+      phone: '+919876543214',
+      vehicleType: 'ICU',
+      vehicleNumber: 'KA 01 AM 7890',
+      rating: 5.0,
+      currentLat: 12.9705,
+      currentLng: 77.5935,
+      photoUrl: 'https://i.pravatar.cc/150?u=mock5',
+    ),
   ];
 
   void _onSelectDriver(DriverModel driver) {
@@ -47,42 +102,35 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
   }
 
   Future<void> _confirmSelection() async {
-    if (_selectedDriverId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a driver")),
-      );
-      return;
-    }
+    if (_selectedDriver == null) return;
 
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
+    // In PRO mode, we navigate immediately to tracking screen
+    // We can still try to save to Firebase in background if needed
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      final requestId = await _firestoreService.createAmbulanceRequest(
-        userId: user.uid,
-        details: widget.details,
-        lat: widget.lat,
-        lng: widget.lng,
-        selectedDriverId: _selectedDriverId,
-        vehicleType: _selectedDriver?.vehicleType,
-      );
-
-      if (requestId != null) {
-        AnalyticsService.logRequestCreated(requestId: requestId);
-
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DriverAssignedScreen(requestId: requestId),
-          ),
+      if (user != null) {
+        // Background creation of request (optional for demo)
+        _firestoreService.createAmbulanceRequest(
+          userId: user.uid,
+          details: widget.details,
+          lat: widget.lat,
+          lng: widget.lng,
+          selectedDriverId: _selectedDriverId,
+          vehicleType: _selectedDriver?.vehicleType,
         );
       }
+
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TrackingMapScreen(driver: _selectedDriver!),
+        ),
+      );
     } catch (e) {
-      /* Handle error */
       debugPrint("Error: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -92,14 +140,21 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Select Ambulance")),
+      appBar: AppBar(
+        title: const Text("Select Ambulance",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black,
+      ),
       body: Column(
         children: [
           // 1. Vehicle Type Filter
-          SizedBox(
+          Container(
             height: 60,
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               itemCount: _vehicleTypes.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -112,13 +167,15 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
                   onSelected: (selected) {
                     setState(() {
                       _selectedVehicleType = type;
-                      _selectedDriverId =
-                          null; // Reset selection on filter change
+                      _selectedDriverId = null;
+                      _selectedDriver = null;
                     });
                   },
-                  selectedColor: Colors.deepOrange.shade100,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  selectedColor: Colors.green.shade100,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.deepOrange : Colors.black,
+                    color: isSelected ? Colors.green.shade800 : Colors.black87,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -127,124 +184,119 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
             ),
           ),
 
-          const Divider(),
+          const Divider(height: 1),
 
           // 2. Driver List
           Expanded(
-            child: StreamBuilder<List<DocumentSnapshot>>(
-              stream: _firestoreService.getNearbyDrivers(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _mockDrivers.length,
+              itemBuilder: (context, index) {
+                final driver = _mockDrivers[index];
+                if (_selectedVehicleType != 'All' &&
+                    driver.vehicleType != _selectedVehicleType) {
+                  return const SizedBox.shrink();
                 }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                final isSelected = _selectedDriverId == driver.id;
 
-                final docs = snapshot.data!;
-                // Filter locally by vehicle type if not 'All'
-                final drivers = docs
-                    .map((d) => DriverModel.fromSnapshot(d))
-                    .where((d) =>
-                        _selectedVehicleType == 'All' ||
-                        d.vehicleType == _selectedVehicleType)
-                    .toList();
-
-                if (drivers.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.commute, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text("No drivers found nearby"),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isSelected ? Colors.green : Colors.transparent,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: drivers.length,
-                  itemBuilder: (context, index) {
-                    final driver = drivers[index];
-                    final isSelected = _selectedDriverId == driver.id;
-
-                    return Card(
-                      elevation: isSelected ? 4 : 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: isSelected
-                            ? const BorderSide(
-                                color: Colors.deepOrange, width: 2)
-                            : BorderSide.none,
-                      ),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: InkWell(
-                        onTap: () => _onSelectDriver(driver),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              // Avatar
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundColor: Colors.grey.shade200,
-                                backgroundImage: driver.profilePhoto != null
-                                    ? NetworkImage(driver.profilePhoto!)
-                                    : null,
-                                child: driver.profilePhoto == null
-                                    ? const Icon(Icons.person,
-                                        size: 30, color: Colors.grey)
-                                    : null,
-                              ),
-                              const SizedBox(width: 16),
-                              // Info
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      driver.name,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "${driver.vehicleType} • ${driver.vehicleNumber}",
-                                      style: TextStyle(
-                                          color: Colors.grey.shade700,
-                                          fontSize: 13),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.star,
-                                            size: 14, color: Colors.amber),
-                                        Text(
-                                          " ${driver.rating}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                    child: InkWell(
+                      onTap: () => _onSelectDriver(driver),
+                      borderRadius: BorderRadius.circular(24),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            // Avatar
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: NetworkImage(driver.photoUrl!),
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              // Radio or Check
-                              if (isSelected)
-                                const Icon(Icons.check_circle,
-                                    color: Colors.deepOrange),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        driver.name,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.star,
+                                              size: 16, color: Colors.amber),
+                                          Text(
+                                            " ${driver.rating}",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${driver.vehicleType} • ${driver.vehicleNumber}",
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on,
+                                          size: 14,
+                                          color: Colors.grey.shade400),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "2.${index + 1} km away",
+                                        style: TextStyle(
+                                            color: Colors.grey.shade500,
+                                            fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
             ),
@@ -253,32 +305,28 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
           // 3. Confirm Button
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 56,
                 child: ElevatedButton(
-                  onPressed: _selectedDriverId != null && !_isLoading
+                  onPressed: _selectedDriver != null && !_isLoading
                       ? _confirmSelection
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrange,
+                    backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 0,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
-                        )
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          "Confirm ${_selectedDriver != null ? _selectedDriver!.name : 'Driver'}",
+                          "Book ${_selectedDriver?.vehicleType ?? 'Ambulance'}",
                           style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                 ),
               ),
