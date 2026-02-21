@@ -47,7 +47,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       debugPrint("Error getting current location: $e");
     }
 
-    // Default fallback (e.g., Google HQ or a specific city center)
     setState(() {
       _pickedLocation = const LatLng(37.42796133580664, -122.085749655962);
       _isLoading = false;
@@ -61,12 +60,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Set Pickup Location"),
-        elevation: 0,
-      ),
+      backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4CAF50)))
           : Stack(
               children: [
                 GoogleMap(
@@ -77,12 +74,55 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   onMapCreated: (controller) {},
                   onCameraMove: _onCameraMove,
                   myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
+                  myLocationButtonEnabled:
+                      false, // We'll use a custom one if needed
                   zoomControlsEnabled: false,
                   mapToolbarEnabled: false,
                 ),
 
-                // Static Center Marker (Crosshair)
+                // Dark Header Overlay
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B3340),
+                      borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(30)),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Expanded(
+                          child: Center(
+                            child: Text(
+                              "Set Pickup Location",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Static Center Marker
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 35),
@@ -90,54 +130,50 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFF2B3340),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
                             "DRAG TO PICK",
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
-                        const Icon(
-                          Icons.location_on,
-                          size: 45,
-                          color: Colors.redAccent,
-                        ),
+                        const Icon(Icons.location_on,
+                            size: 48, color: Color(0xFF4CAF50)),
                       ],
                     ),
                   ),
                 ),
 
-                // Bottom Action
+                // Bottom Action Button
                 Positioned(
-                  bottom: 30,
-                  left: 20,
-                  right: 20,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context, _pickedLocation);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  bottom: 40,
+                  left: 30,
+                  right: 30,
+                  child: SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, _pickedLocation),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28)),
+                        elevation: 5,
+                        shadowColor: Colors.black.withOpacity(0.3),
                       ),
-                      elevation: 5,
-                    ),
-                    child: const Text(
-                      "CONFIRM THIS LOCATION",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
+                      child: const Text(
+                        "CONFIRM LOCATION",
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1),
                       ),
                     ),
                   ),

@@ -16,14 +16,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   void initState() {
     super.initState();
-    _initFCM(); // 🔔 PART 5 — FCM TOKEN INIT
+    _initFCM();
   }
 
   Future<void> _initFCM() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return;
 
     final fcmService = FCMService();
@@ -37,207 +39,272 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = _auth.currentUser;
+    final userName = user?.displayName ?? "User";
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFBF7),
-      body: Stack(
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: Column(
         children: [
-          // 🔹 Background ambulance watermark
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.08,
-              child: Image.asset(
-                'assets/images/ambulance_bg.png',
-                fit: BoxFit.cover,
-              ),
+          // Premium Dark Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(25, 60, 25, 30),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2B3340),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "MEDFI",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "Welcome back, $userName",
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ProfileScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.person, color: Color(0xFF2B3340)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
 
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🔹 TOP BAR
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(25),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Services",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333)),
                   ),
-                  child: Row(
+                  const SizedBox(height: 20),
+
+                  // Main Emergency Card
+                  _buildServiceCard(
+                    title: "Emergency Ambulance",
+                    subtitle: "Get immediate help in minutes",
+                    icon: Icons.emergency,
+                    color: Colors.redAccent,
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const RequestAmbulanceScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Secondary Services Row
+                  Row(
                     children: [
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'MEDFI',
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'Emergency medical help, fast & reliable',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ],
+                      Expanded(
+                        child: _buildSmallServiceCard(
+                          title: "Schedule Ride",
+                          icon: Icons.calendar_today,
+                          color: Colors.blueAccent,
+                          onTap: () {},
                         ),
                       ),
-
-                      // 🔹 PROFILE
-                      IconButton(
-                        icon: const Icon(Icons.person_outline),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // 🔹 LOGOUT
-                      IconButton(
-                        icon: const Icon(Icons.logout),
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: _buildSmallServiceCard(
+                          title: "Ambulance List",
+                          icon: Icons.list_alt,
+                          color: Colors.orangeAccent,
+                          onTap: () {},
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 40),
 
-                // 🔹 CENTER AREA
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                  // Info/Warning Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFC8E6C9)),
+                    ),
+                    child: const Row(
                       children: [
-                        AnimatedScale(
-                          scale: 1,
-                          duration: const Duration(milliseconds: 120),
-                          child: _RequestCard(
-                            onTap: () {
-                              HapticFeedback.mediumImpact();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      const RequestAmbulanceScreen(),
-                                ),
-                              );
-                            },
+                        Icon(Icons.info_outline, color: Color(0xFF2E7D32)),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Text(
+                            "In case of a life-threatening emergency, please call 112 directly if the app is taking time.",
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF2E7D32),
+                                height: 1.4),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        const _InfoCard(),
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 30),
+
+                  // Logout Shortcut
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        _auth.signOut();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.logout, color: Colors.grey),
+                      label: const Text("Sign Out",
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// ================= REQUEST CARD =================
-class _RequestCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _RequestCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
+  Widget _buildServiceCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F1FA),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
             BoxShadow(
-              blurRadius: 12,
-              color: Colors.black12,
-              offset: Offset(0, 4),
-            )
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.redAccent,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: Colors.white),
+              decoration: BoxDecoration(
+                  color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 32),
             ),
-            const SizedBox(width: 14),
-            const Expanded(
+            const SizedBox(width: 20),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Request Ambulance',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Get immediate emergency assistance',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333))),
+                  const SizedBox(height: 4),
+                  Text(subtitle,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
+            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
           ],
         ),
       ),
     );
   }
-}
 
-// ================= INFO CARD =================
-class _InfoCard extends StatelessWidget {
-  const _InfoCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.9,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F1FA),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.info_outline, size: 18),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Your location will be shared only during emergencies.',
-              style: TextStyle(fontSize: 13),
+  Widget _buildSmallServiceCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 24),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333)),
+            ),
+          ],
+        ),
       ),
     );
   }

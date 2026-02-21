@@ -107,12 +107,9 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
-    // In PRO mode, we navigate immediately to tracking screen
-    // We can still try to save to Firebase in background if needed
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Background creation of request (optional for demo)
         _firestoreService.createAmbulanceRequest(
           userId: user.uid,
           details: widget.details,
@@ -140,16 +137,39 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Select Ambulance",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          // 1. Vehicle Type Filter
+          // Premium Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2B3340),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      "Available Ambulances",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 48),
+              ],
+            ),
+          ),
+
+          // Vehicle Type Filter
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -173,9 +193,11 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
                   },
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20)),
-                  selectedColor: Colors.green.shade100,
+                  selectedColor: const Color(0xFFE8F5E9),
+                  checkmarkColor: const Color(0xFF4CAF50),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.green.shade800 : Colors.black87,
+                    color:
+                        isSelected ? const Color(0xFF2E7D32) : Colors.black87,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -184,12 +206,12 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
             ),
           ),
 
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFEEEEEE)),
 
-          // 2. Driver List
+          // Driver List
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               itemCount: _mockDrivers.length,
               itemBuilder: (context, index) {
                 final driver = _mockDrivers[index];
@@ -201,99 +223,88 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isSelected ? Colors.green : Colors.transparent,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  child: InkWell(
+                    onTap: () => _onSelectDriver(driver),
+                    borderRadius: BorderRadius.circular(20),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected ? const Color(0xFFF8FDF9) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF4CAF50)
+                              : Colors.grey.shade100,
+                          width: 2,
                         ),
-                      ],
-                    ),
-                    child: InkWell(
-                      onTap: () => _onSelectDriver(driver),
-                      borderRadius: BorderRadius.circular(24),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // Avatar
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              image: DecorationImage(
                                   image: NetworkImage(driver.photoUrl!),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                                  fit: BoxFit.cover),
                             ),
-                            const SizedBox(width: 16),
-                            // Info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        driver.name,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(driver.name,
                                         style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.star,
-                                              size: 16, color: Colors.amber),
-                                          Text(
-                                            " ${driver.rating}",
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold)),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star,
+                                            size: 14, color: Colors.amber),
+                                        Text(" ${driver.rating}",
                                             style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
                                     "${driver.vehicleType} • ${driver.vehicleNumber}",
                                     style: TextStyle(
                                         color: Colors.grey.shade600,
-                                        fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.location_on,
-                                          size: 14,
-                                          color: Colors.grey.shade400),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "2.${index + 1} km away",
+                                        fontSize: 13)),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on_outlined,
+                                        size: 14, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Text("2.${index + 1} km away",
                                         style: TextStyle(
                                             color: Colors.grey.shade500,
-                                            fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -302,10 +313,20 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
             ),
           ),
 
-          // 3. Confirm Button
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+          // Confirm Button
+          Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4))
+              ],
+            ),
+            child: SafeArea(
+              top: false,
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -314,19 +335,19 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
                       ? _confirmSelection
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF4CAF50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                        borderRadius: BorderRadius.circular(28)),
                     elevation: 0,
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          "Book ${_selectedDriver?.vehicleType ?? 'Ambulance'}",
+                          "BOOK ${_selectedDriver!.vehicleType.toUpperCase()}",
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                 ),
               ),

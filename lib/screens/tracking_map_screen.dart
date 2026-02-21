@@ -41,14 +41,11 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       }
 
       setState(() {
-        // Move marker 5% closer to destination every 3 seconds for smooth-ish demo
         _currentLat += (_destLat - _currentLat) * 0.05;
         _currentLng += (_destLng - _currentLng) * 0.05;
-
         _updateUI();
       });
 
-      // Animate camera to follow marker
       _mapController?.animateCamera(
         CameraUpdate.newLatLng(LatLng(_currentLat, _currentLng)),
       );
@@ -78,7 +75,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       ),
     );
 
-    // Update Polyline
     _polylines.clear();
     _polylines.add(
       Polyline(
@@ -87,17 +83,11 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
           LatLng(_currentLat, _currentLng),
           LatLng(_destLat, _destLng),
         ],
-        color: Colors.blue.shade700,
-        width: 5,
+        color: const Color(0xFF4CAF50),
+        width: 6,
         geodesic: true,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -123,21 +113,22 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
             compassEnabled: false,
           ),
 
-          // TOP GREEN STATUS BAR
+          // Premium Dark Header Overlay
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
               padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 12,
-                  bottom: 16,
-                  left: 20,
-                  right: 20),
+                top: MediaQuery.of(context).padding.top + 15,
+                bottom: 25,
+                left: 20,
+                right: 20,
+              ),
               decoration: BoxDecoration(
-                color: const Color(0xFF2E7D32), // Deep Green
+                color: const Color(0xFF2B3340),
                 borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(24)),
+                    const BorderRadius.vertical(bottom: Radius.circular(30)),
                 boxShadow: [
                   BoxShadow(
                       color: Colors.black.withOpacity(0.2),
@@ -145,19 +136,34 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                       offset: const Offset(0, 4)),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Text(
-                    "En route to pickup",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.emergency,
+                            color: Color(0xFF4CAF50), size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        "En route to pickup",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Hurry! Ambulance is coming",
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Your ambulance is being simulated for this demo",
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -175,5 +181,11 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }
