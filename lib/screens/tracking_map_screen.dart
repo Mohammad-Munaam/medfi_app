@@ -176,7 +176,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
             eta:
                 "${((LatLng(_currentLat, _currentLng).latitude - _destLat).abs() * 1000).toInt() + 2} min",
             distance:
-                "${((LatLng(_currentLat, _currentLng).latitude - _destLat).abs() * 100 + (LatLng(_currentLng, _currentLng).longitude - _destLng).abs() * 100).toStringAsFixed(1)} km",
+                "${((_currentLat - _destLat).abs() * 100 + (_currentLng - _destLng).abs() * 111).toStringAsFixed(1)} km",
           ),
         ],
       ),

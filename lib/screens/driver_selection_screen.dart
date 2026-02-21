@@ -343,7 +343,7 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          "BOOK ${_selectedDriver!.vehicleType.toUpperCase()}",
+                          "BOOK ${(_selectedDriver?.vehicleType ?? 'Ambulance').toUpperCase()}",
                           style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,

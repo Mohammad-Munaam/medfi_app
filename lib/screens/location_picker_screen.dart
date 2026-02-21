@@ -159,7 +159,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   child: SizedBox(
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, _pickedLocation),
+                      onPressed: _pickedLocation == null
+                          ? null
+                          : () => Navigator.pop(context, _pickedLocation),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         shape: RoundedRectangleBorder(
