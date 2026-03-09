@@ -82,7 +82,7 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
               : null,
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF4CAF50),
+          activeThumbColor: const Color(0xFF4CAF50),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 10),

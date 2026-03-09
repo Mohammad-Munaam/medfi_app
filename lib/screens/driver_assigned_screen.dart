@@ -1,7 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../models/driver_model.dart';
 import 'tracking_screen.dart'; // Reuse the map logic by wrapping or extending,
 // OR simpler: compose TrackingScreen or rebuild the UI here.
 // Reusing TrackingScreen logic is complex without refactoring.
