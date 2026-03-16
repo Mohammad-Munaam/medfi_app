@@ -489,7 +489,7 @@ class _TrackingScreenState extends State<TrackingScreen>
                               ? "Driver is at your location"
                               : (_driverName ?? "Hurry! Ambulance is coming"),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withAlpha(230), // 0.9 * 255 = 229.5
                             fontSize: 16,
                           ),
                         ),
@@ -555,7 +555,7 @@ class _TrackingScreenState extends State<TrackingScreen>
                     const BorderRadius.vertical(top: Radius.circular(30)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withAlpha(26), // 0.1 * 255 = 25.5
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -689,7 +689,7 @@ class _TrackingScreenState extends State<TrackingScreen>
               color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8)
+                BoxShadow(color: Colors.black.withAlpha(38), blurRadius: 8) // 0.15 * 255 = 38.25
               ],
             ),
             child: Icon(icon, color: Colors.black54),
@@ -704,7 +704,7 @@ class _TrackingScreenState extends State<TrackingScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)
+                  BoxShadow(color: Colors.black.withAlpha(26), blurRadius: 4) // 0.1 * 255 = 25.5
                 ],
               ),
               child: Row(

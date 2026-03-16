@@ -10,9 +10,12 @@ class NotificationService {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const settings = InitializationSettings(android: androidSettings);
+    const initializationSettings =
+        InitializationSettings(android: androidSettings);
 
-    await _localNotifications.initialize(settings);
+    await _localNotifications.initialize(
+      settings: initializationSettings,
+    );
     debugPrint("✅ NotificationService initialized");
   }
 
@@ -29,10 +32,10 @@ class NotificationService {
     const notificationDetails = NotificationDetails(android: androidDetails);
 
     _localNotifications.show(
-      message.hashCode,
-      message.notification?.title ?? 'MEDFI Alert',
-      message.notification?.body ?? 'Emergency update',
-      notificationDetails,
+      id: message.hashCode,
+      title: message.notification?.title ?? 'MEDFI Alert',
+      body: message.notification?.body ?? 'Emergency update',
+      notificationDetails: notificationDetails,
     );
   }
 }

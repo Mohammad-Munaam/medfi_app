@@ -27,7 +27,7 @@ class DriverBottomPanel extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha(26), // 0.1 * 255 = 25.5
                   blurRadius: 20,
                   spreadRadius: 5),
             ],

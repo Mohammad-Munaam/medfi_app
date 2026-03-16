@@ -93,7 +93,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                           bottom: Radius.circular(30)),
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withAlpha(51), // 0.2 * 255 = 51
                             blurRadius: 10,
                             offset: const Offset(0, 4)),
                       ],
@@ -167,7 +167,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28)),
                         elevation: 5,
-                        shadowColor: Colors.black.withOpacity(0.3),
+                        shadowColor: Colors.black.withAlpha(77), // 0.3 * 255 = 76.5
                       ),
                       child: const Text(
                         "CONFIRM LOCATION",

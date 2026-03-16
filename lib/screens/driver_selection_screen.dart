@@ -241,7 +241,7 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
+                              color: Colors.black.withAlpha(8), // 0.03 * 255 = 7.65
                               blurRadius: 10,
                               offset: const Offset(0, 4)),
                         ],
@@ -320,7 +320,7 @@ class _DriverSelectionScreenState extends State<DriverSelectionScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withAlpha(13), // 0.05 * 255 = 12.75
                     blurRadius: 10,
                     offset: const Offset(0, -4))
               ],

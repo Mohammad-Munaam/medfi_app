@@ -131,7 +131,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                     const BorderRadius.vertical(bottom: Radius.circular(30)),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withAlpha(51), // 0.2 * 255 = 51
                       blurRadius: 10,
                       offset: const Offset(0, 4)),
                 ],
@@ -144,7 +144,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withOpacity(0.2),
+                          color: const Color(0xFF4CAF50).withAlpha(51), // 0.2 * 255 = 51
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.emergency,

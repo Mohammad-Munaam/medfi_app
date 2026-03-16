@@ -1,13 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthService {
-  final GoogleSignIn _googleSignIn;
-
-  GoogleAuthService({GoogleSignIn? googleSignIn})
-      : _googleSignIn = googleSignIn ?? GoogleSignIn();
+  static final GoogleSignIn _instance = GoogleSignIn.instance;
+  
+  GoogleSignIn get _googleSignIn => _instance;
 
   Future<GoogleSignInAccount?> signIn() async {
-    return _googleSignIn.signIn();
+    try {
+      await _googleSignIn.initialize();
+      return await _googleSignIn.authenticate();
+    } catch (e) {
+      debugPrint("Google Sign-In Error: $e");
+      return null;
+    }
   }
 
   Future<void> signOut() async {

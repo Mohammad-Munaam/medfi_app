@@ -136,7 +136,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
                 borderRadius: BorderRadius.circular(50),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withAlpha(26), // 0.1 * 255 = 25.5
                       blurRadius: 10,
                       offset: const Offset(0, 4)),
                 ],
@@ -178,7 +178,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.1), blurRadius: 10),
+                      color: Colors.black.withAlpha(26), blurRadius: 10), // 0.1 * 255 = 25.5
                 ],
               ),
               child: TextButton(

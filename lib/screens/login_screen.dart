@@ -4,7 +4,6 @@ import 'home_screen.dart';
 import 'register_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import '../services/google_auth_service.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../services/admin_service.dart';
 import '../services/firestore_service.dart';
 
@@ -275,8 +274,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (googleAccount != null) {
         final googleAuth = await googleAccount.authentication;
         final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
+          accessToken: null, // accessToken is no longer directly on googleAuth in 7.x
         );
         final userCred = await _auth.signInWithCredential(credential);
         if (userCred.user != null) {
